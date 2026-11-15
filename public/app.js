@@ -1,5 +1,5 @@
 import {login,logout,hasSession,loadPlan,savePlan} from './firebase.js';
-import {normalizedName,validatePlan,tripCounts,filterTrips,addChild,saturdayDate,newWeekDefaults} from './model.js';
+import {normalizedName,validatePlan,tripCounts,filterTrips,addChild,newWeekDefaults} from './model.js';
 const $=id=>document.getElementById(id);
 let plan=null,version=null,draft=null,editingChild=null,addToDraft=false,busy=false;
 function element(tag,text,className) {const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;return e;}
@@ -27,7 +27,7 @@ function render() {
     trip.assignments.forEach((a,i)=>{if(i)children.append(', ');const text=names.get(a.childId)+(a.goalkeeper?' (målvakt)':'')+(a.uncertain?'?':'');children.append(element(a.goalkeeper?'strong':'span',text));});
     const count=element('td');count.append(element('span',trip.assignments.length,'count'));if(trip.note)count.append(element('small',trip.note));
     const actions=element('td'),edit=element('button','Ändra','edit-button');edit.setAttribute('aria-label',`Ändra resa vecka ${trip.week}`);edit.addEventListener('click',()=>openTrip(trip.id));actions.append(edit);
-    const date=element('td',saturdayDate(trip.year,trip.week),'date-cell');row.append(week,date,leaders,children,count,actions);$('trips-body').append(row);
+    const date=element('td',trip.date,'date-cell');row.append(week,date,leaders,children,count,actions);$('trips-body').append(row);
   }
   $('trips-table').hidden=filtered.length===0;$('empty').hidden=filtered.length!==0;$('showing').textContent=`Visar ${filtered.length} av ${plan.trips.length} resor`;
   renderRoster();
@@ -42,7 +42,7 @@ function renderRoster() {
   }
 }
 function openTrip(id) {
-  draft=id?structuredClone(plan.trips.find(t=>t.id===id)):{id:crypto.randomUUID(),...newWeekDefaults(plan),leaders:'',note:'',assignments:[]};$('delete-week').hidden=!id;$('edit-title').textContent=id?`Ändra resa · vecka ${draft.week}`:'Lägg till vecka';$('edit-week').value=draft.week;$('edit-year').value=draft.year;updateDatePreview();$('edit-leaders').value=draft.leaders;$('edit-note').value=draft.note;$('trip-error').textContent='';renderDraft();$('trip-dialog').showModal();
+  draft=id?structuredClone(plan.trips.find(t=>t.id===id)):{id:crypto.randomUUID(),...newWeekDefaults(plan),date:'',leaders:'',note:'',assignments:[]};$('delete-week').hidden=!id;$('edit-title').textContent=id?`Ändra resa · vecka ${draft.week}`:'Lägg till vecka';$('edit-week').value=draft.week;$('edit-year').value=draft.year;$('edit-date').value=draft.date||'';$('edit-leaders').value=draft.leaders;$('edit-note').value=draft.note;$('trip-error').textContent='';renderDraft();$('trip-dialog').showModal();
 }
 function renderDraft() {
   $('edit-assignments').replaceChildren();
@@ -61,11 +61,6 @@ function renderDraft() {
   for(const child of available){const option=element('option',child.name);option.value=child.id;$('add-player').append(option);}
   $('add-player').disabled=available.length===0;$('add-to-trip').disabled=available.length===0;
 }
-function updateDatePreview() {
-  try {$('edit-date').value=saturdayDate(Number($('edit-year').value),Number($('edit-week').value));}
-  catch {$('edit-date').value='Ogiltig vecka eller år';}
-}
-$('edit-week').addEventListener('input',updateDatePreview);$('edit-year').addEventListener('input',updateDatePreview);
 async function persist(next) {
   validatePlan(next);next.trips.sort((a,b)=>a.year-b.year||a.week-b.week);const result=await savePlan(next,version);if(!hasSession())return;plan=result.plan;version=result.version;render();$('save-status').textContent='Ändringarna är sparade.';
 }
@@ -92,7 +87,7 @@ $('trip-form').addEventListener('submit',async event=>{
   event.preventDefault();if(busy)return;$('trip-error').textContent='';setBusy(true);
   try {
     const assignments=draft.assignments.map(a=>{const child=a.typedName===undefined?plan.children.find(c=>c.id===a.childId):plan.children.find(c=>normalizedName(c.name)===normalizedName(a.typedName));if(!child)throw new Error('Välj ett barn från spelarlistan, eller lägg först till barnet via ”Lägg till ett nytt barn”.');return {childId:child.id,goalkeeper:a.goalkeeper,uncertain:a.uncertain};});
-    const next=structuredClone(plan),index=next.trips.findIndex(t=>t.id===draft.id);const updated={...draft,week:Number($('edit-week').value),year:Number($('edit-year').value),leaders:$('edit-leaders').value.trim(),note:$('edit-note').value.trim(),assignments};if(index===-1)next.trips.push(updated);else next.trips[index]=updated;await persist(next);$('trip-dialog').close();draft=null;
+    const next=structuredClone(plan),index=next.trips.findIndex(t=>t.id===draft.id);const updated={...draft,week:Number($('edit-week').value),year:Number($('edit-year').value),date:$('edit-date').value,leaders:$('edit-leaders').value.trim(),note:$('edit-note').value.trim(),assignments};if(index===-1)next.trips.push(updated);else next.trips[index]=updated;await persist(next);$('trip-dialog').close();draft=null;
   }catch(error){handleError(error,'trip-error');}finally{setBusy(false);}
 });
 $('child-form').addEventListener('submit',async event=>{

@@ -8,6 +8,12 @@ export function saturdayDate(year, week) {
   const monday = 4 - ((januaryFourth.getUTCDay() || 7) - 1);
   return new Date(Date.UTC(year, 0, monday + (week - 1) * 7 + 5)).toISOString().slice(0, 10);
 }
+export function validateDate(value) {
+  if(typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error('Ange ett datum i formatet ÅÅÅÅ-MM-DD.');
+  const date=new Date(value+'T00:00:00Z');
+  if(!Number.isFinite(date.getTime()) || date.toISOString().slice(0,10)!==value || Number(value.slice(0,4))<1900 || Number(value.slice(0,4))>2200) throw new Error('Ange ett giltigt datum.');
+  return value;
+}
 export function normalizedName(name) { return name.trim().replace(/\s+/g, ' ').toLocaleLowerCase('sv'); }
 export function validatePlan(plan) {
   if (!plan || !Array.isArray(plan.children) || !Array.isArray(plan.trips)) throw new Error('Reseplanens format är ogiltigt.');
@@ -19,6 +25,7 @@ export function validatePlan(plan) {
   for (const trip of plan.trips) {
     if (typeof trip.id !== 'string' || !trip.id || tripIds.has(trip.id) || !Number.isInteger(trip.week) || trip.week < 1 || trip.week > 53 || typeof trip.leaders !== 'string' || trip.leaders.length > 200 || typeof trip.note !== 'string' || trip.note.length > 300 || !Array.isArray(trip.assignments)) throw new Error('En resa har ogiltiga uppgifter.');
     saturdayDate(trip.year, trip.week);
+    validateDate(trip.date);
     const weekKey=`${trip.year}-${trip.week}`;
     if(weeks.has(weekKey)) throw new Error(`Vecka ${trip.week} år ${trip.year} finns redan. Ändra den befintliga veckan i stället.`);
     weeks.add(weekKey);
@@ -37,7 +44,7 @@ export function tripCounts(plan) {
 }
 export function filterTrips(plan, query) {
   const term = normalizedName(query); const names = new Map(plan.children.map(c => [c.id,c.name]));
-  return plan.trips.filter(t => [`vecka ${t.week}`,`v${t.week}`,saturdayDate(t.year,t.week),t.leaders,t.note,...t.assignments.map(a => names.get(a.childId))].join(' ').toLocaleLowerCase('sv').includes(term));
+  return plan.trips.filter(t => [`vecka ${t.week}`,`v${t.week}`,t.date,t.leaders,t.note,...t.assignments.map(a => names.get(a.childId))].join(' ').toLocaleLowerCase('sv').includes(term));
 }
 export function addChild(plan, name) {
   const trimmed = name.trim().replace(/\s+/g, ' ');
