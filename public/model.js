@@ -57,3 +57,11 @@ export function newWeekDefaults(plan) {
   try {saturdayDate(year,week);} catch {year++;week=1;}
   return {year,week};
 }
+
+export function sortChildren(plan, order = 'trips') {
+  const counts = tripCounts(plan);
+  return [...plan.children].sort((a, b) => {
+    const difference = order === 'trips' ? counts.get(b.id) - counts.get(a.id) : 0;
+    return difference || a.name.localeCompare(b.name, 'sv');
+  });
+}

@@ -1,7 +1,7 @@
 import {login,logout,hasSession,loadPlan,savePlan} from './firebase.js';
-import {normalizedName,validatePlan,tripCounts,filterTrips,addChild,newWeekDefaults} from './model.js';
+import {normalizedName,validatePlan,tripCounts,filterTrips,addChild,newWeekDefaults,sortChildren} from './model.js';
 const $=id=>document.getElementById(id);
-let plan=null,version=null,draft=null,editingChild=null,addToDraft=false,busy=false;
+let plan=null,version=null,draft=null,editingChild=null,addToDraft=false,busy=false,rosterSort='trips';
 function element(tag,text,className) {const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;return e;}
 function showLogin(message='') {
   $('boot-status').hidden=true;$('login-view').hidden=false;$('planner-view').hidden=true;
@@ -34,13 +34,17 @@ function render() {
 }
 function renderRoster() {
   const counts=tripCounts(plan);$('roster-count').textContent=plan.children.length;$('roster-list').replaceChildren();
-  for(const child of [...plan.children].sort((a,b)=>a.name.localeCompare(b.name,'sv'))) {
+  $('sort-roster-trips').setAttribute('aria-pressed',String(rosterSort==='trips'));
+  $('sort-roster-name').setAttribute('aria-pressed',String(rosterSort==='name'));
+  for(const child of sortChildren(plan,rosterSort)) {
     const item=element('li'),name=element('span',child.name,'roster-name'),count=counts.get(child.id)||0;
     name.tabIndex=0;name.title=`${child.name} är schemalagd på ${count} ${count===1?'resa':'resor'}.`;name.setAttribute('aria-label',name.title);name.dataset.tooltip=`${count} schemalagda ${count===1?'resa':'resor'}`;
     const badge=element('span',count,'roster-badge');badge.setAttribute('aria-hidden','true');
     const edit=element('button','✎','rename-child');edit.title=`Ändra namn på ${child.name}`;edit.setAttribute('aria-label',edit.title);edit.addEventListener('click',()=>openChild(child.id));item.append(name,badge,edit);$('roster-list').append(item);
   }
 }
+$('sort-roster-trips').addEventListener('click',()=>{rosterSort='trips';if(plan)renderRoster();});
+$('sort-roster-name').addEventListener('click',()=>{rosterSort='name';if(plan)renderRoster();});
 function openTrip(id) {
   draft=id?structuredClone(plan.trips.find(t=>t.id===id)):{id:crypto.randomUUID(),...newWeekDefaults(plan),date:'',leaders:'',note:'',assignments:[]};$('delete-week').hidden=!id;$('edit-title').textContent=id?`Ändra resa · vecka ${draft.week}`:'Lägg till vecka';$('edit-week').value=draft.week;$('edit-year').value=draft.year;$('edit-date').value=draft.date||'';$('edit-leaders').value=draft.leaders;$('edit-note').value=draft.note;$('trip-error').textContent='';renderDraft();$('trip-dialog').showModal();
 }
