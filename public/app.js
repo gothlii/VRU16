@@ -78,7 +78,7 @@ $('toggle-password').addEventListener('click',()=>{const visible=$('password').t
 $('logout').addEventListener('click',()=>{logout();showLogin();});$('search').addEventListener('input',render);$('retry').addEventListener('click',refresh);$('reload-plan').addEventListener('click',refresh);
 $('add-to-trip').addEventListener('click',()=>{const id=$('add-player').value;if(!id)return;draft.assignments.push({childId:id,goalkeeper:false,uncertain:false});renderDraft();});
 for(const id of ['cancel-trip','close-trip'])$(id).addEventListener('click',()=>{if(!busy){$('trip-dialog').close();draft=null;}});
-for(const id of ['cancel-child','close-child','delete-week'])$(id).addEventListener('click',()=>{if(!busy)$('child-dialog').close();});
+for(const id of ['cancel-child','close-child'])$(id).addEventListener('click',()=>{if(!busy)$('child-dialog').close();});
 for(const id of ['trip-dialog','child-dialog'])$(id).addEventListener('cancel',event=>{if(busy)event.preventDefault();});
 $('add-week').addEventListener('click',()=>openTrip(null));
 $('delete-week').addEventListener('click',async()=>{
