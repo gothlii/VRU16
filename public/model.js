@@ -1,3 +1,13 @@
+export function saturdayDate(year, week) {
+  if (!Number.isInteger(year) || year < 1900 || year > 2200 || !Number.isInteger(week)) throw new Error('Ange ett giltigt år och veckonummer.');
+  const januaryFirst = new Date(Date.UTC(year, 0, 1)).getUTCDay() || 7;
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const maximum = januaryFirst === 4 || (januaryFirst === 3 && leap) ? 53 : 52;
+  if (week < 1 || week > maximum) throw new Error(`År ${year} har veckorna 1–${maximum}.`);
+  const januaryFourth = new Date(Date.UTC(year, 0, 4));
+  const monday = 4 - ((januaryFourth.getUTCDay() || 7) - 1);
+  return new Date(Date.UTC(year, 0, monday + (week - 1) * 7 + 5)).toISOString().slice(0, 10);
+}
 export function normalizedName(name) { return name.trim().replace(/\s+/g, ' ').toLocaleLowerCase('sv'); }
 export function validatePlan(plan) {
   if (!plan || !Array.isArray(plan.children) || !Array.isArray(plan.trips)) throw new Error('Reseplanens format är ogiltigt.');
@@ -8,6 +18,7 @@ export function validatePlan(plan) {
   }
   for (const trip of plan.trips) {
     if (typeof trip.id !== 'string' || !trip.id || tripIds.has(trip.id) || !Number.isInteger(trip.week) || trip.week < 1 || trip.week > 53 || typeof trip.leaders !== 'string' || !trip.leaders.trim() || trip.leaders.length > 200 || typeof trip.note !== 'string' || trip.note.length > 300 || !Array.isArray(trip.assignments)) throw new Error('En resa har ogiltiga uppgifter.');
+    saturdayDate(trip.year, trip.week);
     tripIds.add(trip.id); const assigned = new Set();
     for (const a of trip.assignments) {
       if (!ids.has(a.childId) || assigned.has(a.childId) || typeof a.goalkeeper !== 'boolean' || typeof a.uncertain !== 'boolean') throw new Error('Välj barn från spelarlistan. Samma barn får bara finnas en gång per resa.');
@@ -23,7 +34,7 @@ export function tripCounts(plan) {
 }
 export function filterTrips(plan, query) {
   const term = normalizedName(query); const names = new Map(plan.children.map(c => [c.id,c.name]));
-  return plan.trips.filter(t => [`vecka ${t.week}`,`v${t.week}`,t.leaders,t.note,...t.assignments.map(a => names.get(a.childId))].join(' ').toLocaleLowerCase('sv').includes(term));
+  return plan.trips.filter(t => [`vecka ${t.week}`,`v${t.week}`,saturdayDate(t.year,t.week),t.leaders,t.note,...t.assignments.map(a => names.get(a.childId))].join(' ').toLocaleLowerCase('sv').includes(term));
 }
 export function addChild(plan, name) {
   const trimmed = name.trim().replace(/\s+/g, ' ');
