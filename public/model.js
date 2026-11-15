@@ -17,7 +17,7 @@ export function validateDate(value) {
 export function normalizedName(name) { return name.trim().replace(/\s+/g, ' ').toLocaleLowerCase('sv'); }
 export function validatePlan(plan) {
   if (!plan || !Array.isArray(plan.children) || !Array.isArray(plan.trips)) throw new Error('Reseplanens format är ogiltigt.');
-  const ids = new Set(), names = new Set(), tripIds = new Set(), weeks = new Set();
+  const ids = new Set(), names = new Set(), tripIds = new Set();
   for (const child of plan.children) {
     if (typeof child.id !== 'string' || !child.id || typeof child.name !== 'string' || !normalizedName(child.name) || child.name.length > 100 || ids.has(child.id) || names.has(normalizedName(child.name))) throw new Error('Spelarlistan innehåller ett ogiltigt namn eller en dubblett.');
     ids.add(child.id); names.add(normalizedName(child.name));
@@ -26,9 +26,6 @@ export function validatePlan(plan) {
     if (typeof trip.id !== 'string' || !trip.id || tripIds.has(trip.id) || !Number.isInteger(trip.week) || trip.week < 1 || trip.week > 53 || typeof trip.leaders !== 'string' || trip.leaders.length > 200 || typeof trip.note !== 'string' || trip.note.length > 300 || !Array.isArray(trip.assignments)) throw new Error('En resa har ogiltiga uppgifter.');
     saturdayDate(trip.year, trip.week);
     validateDate(trip.date);
-    const weekKey=`${trip.year}-${trip.week}`;
-    if(weeks.has(weekKey)) throw new Error(`Vecka ${trip.week} år ${trip.year} finns redan. Ändra den befintliga veckan i stället.`);
-    weeks.add(weekKey);
     tripIds.add(trip.id); const assigned = new Set();
     for (const a of trip.assignments) {
       if (!ids.has(a.childId) || assigned.has(a.childId) || typeof a.goalkeeper !== 'boolean' || typeof a.uncertain !== 'boolean') throw new Error('Välj barn från spelarlistan. Samma barn får bara finnas en gång per resa.');
