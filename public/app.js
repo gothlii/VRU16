@@ -1,5 +1,5 @@
 import {login,logout,hasSession,loadPlan,savePlan} from './firebase.js';
-import {normalizedName,validatePlan,tripCounts,filterTrips,addChild,saturdayDate} from './model.js';
+import {normalizedName,validatePlan,tripCounts,filterTrips,addChild,saturdayDate,newWeekDefaults} from './model.js';
 const $=id=>document.getElementById(id);
 let plan=null,version=null,draft=null,editingChild=null,addToDraft=false,busy=false;
 function element(tag,text,className) {const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;return e;}
@@ -13,8 +13,8 @@ async function showPlanner() {
 }
 function handleError(error,target) { if(error.status===401) {logout();showLogin('Inloggningen har gått ut. Logga in igen.');} else $(target).textContent=error.message; }
 async function refresh() {
-  $('load-status').hidden=false;$('load-status').textContent='Hämtar reseplanen…';$('retry').hidden=true;$('trips-table').hidden=true;$('empty').hidden=true;$('new-child').disabled=true;$('save-status').textContent='';
-  try {const result=await loadPlan();if(!hasSession())return;plan=result.plan;version=result.version;$('load-status').hidden=true;$('new-child').disabled=false;render();}
+  $('load-status').hidden=false;$('load-status').textContent='Hämtar reseplanen…';$('retry').hidden=true;$('trips-table').hidden=true;$('empty').hidden=true;$('new-child').disabled=true;$('add-week').disabled=true;$('save-status').textContent='';
+  try {const result=await loadPlan();if(!hasSession())return;plan=result.plan;version=result.version;$('load-status').hidden=true;$('new-child').disabled=false;$('add-week').disabled=false;render();}
   catch(error) {handleError(error,'load-status');$('retry').hidden=false;}
 }
 function render() {
@@ -23,7 +23,7 @@ function render() {
   $('trips-body').replaceChildren();$('trip-count').textContent=String(plan.trips.length).padStart(2,'0');
   for(const trip of filtered) {
     const row=element('tr'),week=element('th');week.scope='row';week.append(element('span',String(trip.week),'week-badge'));
-    const leaders=element('td',trip.leaders,'leaders'),children=element('td',undefined,'children');
+    const leaders=element('td',trip.leaders||'Ej planerat','leaders'),children=element('td',undefined,'children');
     trip.assignments.forEach((a,i)=>{if(i)children.append(', ');const text=names.get(a.childId)+(a.goalkeeper?' (målvakt)':'')+(a.uncertain?'?':'');children.append(element(a.goalkeeper?'strong':'span',text));});
     const count=element('td');count.append(element('span',trip.assignments.length,'count'));if(trip.note)count.append(element('small',trip.note));
     const actions=element('td'),edit=element('button','Ändra','edit-button');edit.setAttribute('aria-label',`Ändra resa vecka ${trip.week}`);edit.addEventListener('click',()=>openTrip(trip.id));actions.append(edit);
@@ -42,7 +42,7 @@ function renderRoster() {
   }
 }
 function openTrip(id) {
-  draft=structuredClone(plan.trips.find(t=>t.id===id));$('edit-title').textContent=`Ändra resa · vecka ${draft.week}`;$('edit-week').value=draft.week;$('edit-year').value=draft.year;updateDatePreview();$('edit-leaders').value=draft.leaders;$('edit-note').value=draft.note;$('trip-error').textContent='';renderDraft();$('trip-dialog').showModal();
+  draft=id?structuredClone(plan.trips.find(t=>t.id===id)):{id:crypto.randomUUID(),...newWeekDefaults(plan),leaders:'',note:'',assignments:[]};$('delete-week').hidden=!id;$('edit-title').textContent=id?`Ändra resa · vecka ${draft.week}`:'Lägg till vecka';$('edit-week').value=draft.week;$('edit-year').value=draft.year;updateDatePreview();$('edit-leaders').value=draft.leaders;$('edit-note').value=draft.note;$('trip-error').textContent='';renderDraft();$('trip-dialog').showModal();
 }
 function renderDraft() {
   $('edit-assignments').replaceChildren();
@@ -67,9 +67,9 @@ function updateDatePreview() {
 }
 $('edit-week').addEventListener('input',updateDatePreview);$('edit-year').addEventListener('input',updateDatePreview);
 async function persist(next) {
-  validatePlan(next);const result=await savePlan(next,version);if(!hasSession())return;plan=result.plan;version=result.version;render();$('save-status').textContent='Ändringarna är sparade.';
+  validatePlan(next);next.trips.sort((a,b)=>a.year-b.year||a.week-b.week);const result=await savePlan(next,version);if(!hasSession())return;plan=result.plan;version=result.version;render();$('save-status').textContent='Ändringarna är sparade.';
 }
-function setBusy(value){busy=value;for(const id of ['save-trip','save-child','cancel-trip','close-trip','cancel-child','close-child']) $(id).disabled=value;}
+function setBusy(value){busy=value;for(const id of ['save-trip','save-child','cancel-trip','close-trip','cancel-child','close-child','delete-week']) $(id).disabled=value;}
 function openChild(id=null,fromDraft=false) {
   editingChild=id;addToDraft=fromDraft;$('child-title').textContent=id?'Ändra barnets namn':'Lägg till barn';$('child-name').value=id?plan.children.find(c=>c.id===id).name:'';$('child-help').textContent=id?'Namnändringen gäller alla resor där barnet finns med.':'Barnet läggs till i spelarlistan och kan sedan väljas till en resa.';$('child-error').textContent='';$('child-dialog').showModal();
 }
@@ -78,14 +78,21 @@ $('toggle-password').addEventListener('click',()=>{const visible=$('password').t
 $('logout').addEventListener('click',()=>{logout();showLogin();});$('search').addEventListener('input',render);$('retry').addEventListener('click',refresh);$('reload-plan').addEventListener('click',refresh);
 $('add-to-trip').addEventListener('click',()=>{const id=$('add-player').value;if(!id)return;draft.assignments.push({childId:id,goalkeeper:false,uncertain:false});renderDraft();});
 for(const id of ['cancel-trip','close-trip'])$(id).addEventListener('click',()=>{if(!busy){$('trip-dialog').close();draft=null;}});
-for(const id of ['cancel-child','close-child'])$(id).addEventListener('click',()=>{if(!busy)$('child-dialog').close();});
+for(const id of ['cancel-child','close-child','delete-week'])$(id).addEventListener('click',()=>{if(!busy)$('child-dialog').close();});
 for(const id of ['trip-dialog','child-dialog'])$(id).addEventListener('cancel',event=>{if(busy)event.preventDefault();});
+$('add-week').addEventListener('click',()=>openTrip(null));
+$('delete-week').addEventListener('click',async()=>{
+  if(busy||!draft||!window.confirm(`Ta bort vecka ${draft.week} år ${draft.year}? Alla planerade barn och uppgifter för den veckan tas bort. Spelarlistan behålls.`))return;
+  setBusy(true);$('trip-error').textContent='';
+  try{const next=structuredClone(plan);next.trips=next.trips.filter(t=>t.id!==draft.id);await persist(next);$('trip-dialog').close();draft=null;}
+  catch(error){handleError(error,'trip-error');}finally{setBusy(false);}
+});
 $('new-child').addEventListener('click',()=>openChild());$('new-child-in-trip').addEventListener('click',()=>openChild(null,true));
 $('trip-form').addEventListener('submit',async event=>{
   event.preventDefault();if(busy)return;$('trip-error').textContent='';setBusy(true);
   try {
     const assignments=draft.assignments.map(a=>{const child=a.typedName===undefined?plan.children.find(c=>c.id===a.childId):plan.children.find(c=>normalizedName(c.name)===normalizedName(a.typedName));if(!child)throw new Error('Välj ett barn från spelarlistan, eller lägg först till barnet via ”Lägg till ett nytt barn”.');return {childId:child.id,goalkeeper:a.goalkeeper,uncertain:a.uncertain};});
-    const next=structuredClone(plan),index=next.trips.findIndex(t=>t.id===draft.id);next.trips[index]={...draft,week:Number($('edit-week').value),year:Number($('edit-year').value),leaders:$('edit-leaders').value.trim(),note:$('edit-note').value.trim(),assignments};await persist(next);$('trip-dialog').close();draft=null;
+    const next=structuredClone(plan),index=next.trips.findIndex(t=>t.id===draft.id);const updated={...draft,week:Number($('edit-week').value),year:Number($('edit-year').value),leaders:$('edit-leaders').value.trim(),note:$('edit-note').value.trim(),assignments};if(index===-1)next.trips.push(updated);else next.trips[index]=updated;await persist(next);$('trip-dialog').close();draft=null;
   }catch(error){handleError(error,'trip-error');}finally{setBusy(false);}
 });
 $('child-form').addEventListener('submit',async event=>{

@@ -27,6 +27,7 @@ npm test
 - Inloggning med lagets användarnamn och lösenord. Reseuppgifter hämtas först efter inloggning.
 - Tabell med numeriskt veckonummer, lördagens datum (`ÅÅÅÅ-MM-DD`), ledare, barn och antal barn. Vecka och år kan ändras per resa; datumet räknas automatiskt från ISO-veckan. Veckorna 41–50 utgår från 2026 och de tidiga veckorna från 2027. Målvakter och osäkra deltagare markeras.
 - Spelarlista bredvid tabellen på stora skärmar och under den på mobil. Antal resor visas som en siffra och vid hovring eller tangentbordsfokus.
+- **Lägg till vecka** skapar en ny resa med vecka, år, ledare, barn och anteckning. Datumet räknas automatiskt. Samma vecka och år får inte finnas två gånger. Ledare kan fyllas i senare. **Ta bort vecka** under **Ändra** tar bort resan efter bekräftelse; barnen behålls i spelarlistan. Resorna sorteras kronologiskt när ändringar sparas.
 - **Ändra** öppnar resan. Barnnamn kan skrivas med fritext och måste matcha spelarlistan. Barn kan tas bort, bytas och läggas till från listan innan ändringarna sparas.
 - Nya barn kan skapas från spelarlistan eller inne i en resa. Namn kan ändras och uppdateras då på samtliga resor. Dubbletter och tomma namn avvisas.
 - Antal barn och resräknare räknas om efter sparning. Även osäkra placeringar räknas som schemalagda resor.
