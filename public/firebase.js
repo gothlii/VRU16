@@ -25,7 +25,7 @@ async function request(url,options) {
   return data;
 }
 export async function login(username,password) {
-  if(username.trim()!=='team16') throw new Error('Fel användarnamn eller lösenord.');
+  if(username.trim().toLowerCase()!=='team16') throw new Error('Fel användarnamn eller lösenord.');
   let data;
   try { data=await request(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'team16@vru16.internal',password:`VRU16:${password}`,returnSecureToken:true})}); }
   catch(error) { if(error.message.includes('TOO_MANY_ATTEMPTS')) throw new Error('För många inloggningsförsök. Försök igen senare.'); if(error.status) throw new Error('Fel användarnamn eller lösenord.'); throw error; }

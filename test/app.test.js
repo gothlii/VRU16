@@ -38,3 +38,22 @@ test('Inloggning fungerar utan sessionslagring eller AbortSignal.timeout',async 
   assert.equal(api.hasSession(),false);
   await assert.rejects(api.loadPlan(),e=>e.status===401);
 });
+
+test('Lagets användarnamn tillåter olika skiftlägen medan lösenordet kontrolleras oförändrat',async t=>{
+  const originalFetch=globalThis.fetch,memory=new Map();let requests=0;
+  globalThis.sessionStorage={getItem:key=>memory.get(key)||null,setItem:(key,value)=>memory.set(key,value),removeItem:key=>memory.delete(key)};
+  globalThis.fetch=async(url,options)=>{
+    requests++;const body=JSON.parse(options.body);
+    assert.equal(body.email,'team16@vru16.internal');
+    if(body.password!=='VRU16:Test-Password')return new Response(JSON.stringify({error:{message:'INVALID_LOGIN_CREDENTIALS'}}),{status:400});
+    return new Response(JSON.stringify({idToken:'case-token',refreshToken:'case-refresh',expiresIn:'3600'}),{status:200});
+  };
+  t.after(()=>{globalThis.fetch=originalFetch;delete globalThis.sessionStorage;});
+  const api=await import('../public/firebase.js?case-insensitive-login');
+  for(const name of ['team16','Team16','TEAM16','  Team16  ']){await api.login(name,'Test-Password');assert.equal(api.hasSession(),true);api.logout();}
+  assert.equal(requests,4);
+  await assert.rejects(api.login('team17','Test-Password'),/Fel användarnamn eller lösenord/);
+  assert.equal(requests,4);
+  await assert.rejects(api.login('TEAM16','test-password'),/Fel användarnamn eller lösenord/);
+  assert.equal(api.hasSession(),false);
+});
