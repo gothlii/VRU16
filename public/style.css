@@ -4,3 +4,162 @@
 .week-actions{display:flex;justify-content:flex-end;padding:22px 28px 0}.week-actions .primary{width:auto;gap:28px;padding:12px 17px;font-size:12px}.danger{border:1px solid #e7bdc1;background:#fff5f5;color:#9c2430;border-radius:3px;padding:12px 14px;font-size:11px;font-weight:700}.danger:hover{background:#ffe6e8}.trip-actions .danger{margin-right:auto}.week-actions+.table-toolbar{padding-top:20px}@media(max-width:650px){.week-actions{padding:20px 18px 0}.trip-actions{flex-wrap:wrap}.trip-actions .danger{margin-right:0}.trip-actions .primary{min-width:125px}.dialog-actions{gap:8px}}
 .date-help{font-size:11px;line-height:1.6;color:var(--muted);margin:10px 0 0}.trip-date-fields input[type=date]{min-width:0;max-width:100%}
 .roster-sort{display:flex;gap:3px;border:1px solid var(--line);background:#f3f5f8;border-radius:4px;padding:3px;margin:0 0 18px}.roster-sort button{flex:1;border:1px solid transparent;background:transparent;padding:9px 5px;color:var(--muted);font-size:11px;font-weight:700;border-radius:3px;white-space:nowrap}.roster-sort button[aria-pressed=true]{background:var(--navy);color:#fff;border-color:var(--navy)}.roster-sort button:hover[aria-pressed=false]{background:#e5eaf3;color:var(--navy)}
+
+/* Responsive layouts share the same data and controls as the desktop table. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scrollbar-gutter:stable}
+body{min-width:0}
+button,a{touch-action:manipulation}
+button,input,select{max-width:100%}
+.mobile-sections{display:none}
+.dialog-open{overflow:hidden}
+dialog{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+dialog form,.dialog-heading>div,.trip-date-fields>div{min-width:0}
+#travel-title,#roster-title{scroll-margin-top:80px}
+@media(max-width:1200px){
+  .planner-columns{grid-template-columns:minmax(0,1fr);gap:24px}
+  #roster-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:32px}
+  .roster-panel>.primary{max-width:300px}
+  .table-toolbar{display:flex}
+  .table-toolbar .search{width:48%;margin:0}
+  .mobile-sections{display:flex;position:sticky;top:0;z-index:5;gap:8px;margin:0 0 20px;padding:10px 0;background:var(--paper)}
+  .mobile-sections a{display:flex;align-items:center;justify-content:center;min-height:44px;flex:1;padding:10px 16px;border:1px solid #d3d9e4;border-radius:5px;background:#fff;font-size:14px;font-weight:700}
+  .mobile-sections a:first-child{background:var(--navy);color:#fff;border-color:var(--navy)}
+}
+@media(min-width:901px) and (max-width:1200px){
+  #trips-table{min-width:760px}
+}
+@media(max-width:900px){
+  /* Cards replace horizontal table scrolling while preserving table semantics. */
+  .table-scroll{overflow:visible;padding:0 16px 4px}
+  #trips-table{display:block;min-width:0;width:100%;border:0}
+  #trips-table caption,#trips-table thead{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0}
+  #trips-table tbody{display:grid;gap:14px;width:100%}
+  #trips-table tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px 12px;background:#fff;border:1px solid #dce2eb;border-radius:7px;padding:16px;box-shadow:0 2px 8px #15233d04}
+  #trips-table tbody td,#trips-table tbody th{display:block;min-width:0;width:auto;margin:0;border:0;padding:0;line-height:1.65;text-align:left;overflow-wrap:anywhere}
+  #trips-table tbody td::before,#trips-table tbody th::before{content:attr(data-label);display:block;margin:0 0 5px;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+  #trips-table .week-cell{grid-column:1;grid-row:1}
+  #trips-table .date-cell{grid-column:2;grid-row:1;font-size:14px;white-space:nowrap}
+  #trips-table .week-badge{min-width:45px;font-size:16px;padding:2px 10px}
+  #trips-table .leaders,#trips-table .children{grid-column:1/-1;font-size:14px}
+  #trips-table .count-cell{grid-column:1;align-self:center}
+  #trips-table .count-cell .count{font-size:20px}
+  #trips-table .count-cell small{font-size:12px}
+  #trips-table .actions-cell{grid-column:2;align-self:end}
+  #trips-table .actions-cell::before{content:none}
+  #trips-table .edit-button{min-height:44px;min-width:100px;font-size:14px;padding:10px 18px}
+  .table-toolbar{padding:22px 20px 16px}
+  .table-help{padding:0 20px 20px;font-size:12px}
+  .table-bottom{flex-wrap:wrap;gap:10px 16px;font-size:12px}
+  .table-bottom .text-button{font-size:13px;min-height:44px}
+  .roster-sort button{min-height:44px;font-size:13px}
+  #roster-list li{min-width:0;min-height:56px;gap:10px;padding:6px 0}
+  .roster-name{min-width:0;font-size:14px;overflow-wrap:anywhere}
+  .roster-badge{flex-shrink:0;min-width:30px;padding:5px 7px;font-size:13px}
+  .rename-child{flex-shrink:0;min-width:44px;min-height:44px;font-size:21px}
+}
+@media(max-width:760px){
+  /* 16px form text prevents Safari's automatic input zoom; pinch zoom stays enabled. */
+  input,.search input,.assignment-row>input,.add-player-row select,.trip-date-fields input,.trip-date-fields input[type=date]{font-size:16px}
+  input,select{min-height:48px;min-width:0}
+  button.primary,button.secondary,button.danger,.logout,.retry,.icon-button,.remove-player{min-height:44px}
+  .primary,.secondary,.danger,.text-button{font-size:14px}
+  .text-button{min-height:44px;line-height:1.5;text-align:left}
+  .login-view{min-height:100vh;min-height:100svh}
+  .login-header{padding:calc(20px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 20px max(16px,env(safe-area-inset-left,0px));gap:16px}
+  .login-header>.eyebrow{font-size:9px;letter-spacing:1px;line-height:1.6;text-align:right}
+  .login-layout{display:block;width:calc(100% - 32px);max-width:520px;margin:0 auto;padding:24px 0 32px}
+  .intro h1{font-size:clamp(34px,8vw,46px);letter-spacing:-1.8px;line-height:1.08;margin:12px 0 16px}
+  .intro-copy{font-size:15px;line-height:1.65;max-width:none;margin:0}
+  .intro-bottom{display:flex;margin:22px 0 28px;font-size:11px;line-height:1.8;letter-spacing:1px;gap:12px}
+  .intro-bottom .line{width:24px;flex-shrink:0}
+  .login-panel{padding:26px 22px 24px}
+  .login-panel h2{font-size:28px;margin-top:24px}
+  .muted{font-size:14px}
+  label{font-size:14px}
+  .password-field input{padding-right:68px}
+  .password-field button{top:0;right:2px;min-height:48px;padding:0 12px;font-size:13px}
+  .club-signature{gap:14px}
+  .club-signature span{font-size:11px;line-height:1.5}
+  .login-footer{flex-wrap:wrap;gap:12px;font-size:9px;line-height:1.6;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))}
+  .app-header{height:auto;min-height:72px;gap:12px;padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px))}
+  .app-header .wordmark{font-size:25px;flex-shrink:0}
+  .nav-active{height:auto;align-self:stretch;font-size:11px;border:0;line-height:1.4;min-width:0}
+  .logout{font-size:12px;padding:8px 12px;white-space:nowrap;flex-shrink:0}
+  .logout span{display:none}
+  .planner{padding:24px 16px calc(24px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .planner-intro{align-items:flex-start;gap:12px;margin-bottom:16px}
+  .planner-intro>div{min-width:0}
+  .planner h1{font-size:clamp(26px,6.8vw,38px);letter-spacing:-1.2px;overflow-wrap:anywhere}
+  .planner-intro img{width:46px;height:auto;margin-top:3px;flex-shrink:0}
+  .planner-intro>div>p:last-child{font-size:14px;max-width:none}
+  .planner-intro .eyebrow{font-size:9px;letter-spacing:1px;line-height:1.5}
+  .week-actions{padding:18px 16px 0}
+  .week-actions .primary{width:100%;font-size:14px}
+  .table-toolbar{display:block;padding:20px 16px 16px}
+  .table-toolbar .search{width:100%;margin-top:18px}
+  .search input{padding-top:12px;padding-bottom:12px}
+  .table-help{padding-left:16px;padding-right:16px;line-height:1.6}
+  .table-scroll{padding:0 12px 4px}
+  .table-bottom{padding:14px 16px}
+  .roster-panel{padding:22px 16px}
+  .roster-heading p:last-child{font-size:13px;line-height:1.6}
+  .roster-panel>.primary{max-width:none}
+  .planner-footer{flex-wrap:wrap;gap:12px;font-size:9px;line-height:1.6}
+  /* Full-height sheets remain scrollable with the iOS keyboard and nested dialogs. */
+  body.dialog-open{position:fixed;top:var(--dialog-scroll-y);left:0;right:0;width:100%}
+  dialog,#child-dialog{position:fixed;inset:0;width:100%;max-width:none;height:100%;height:100dvh;max-height:100%;max-height:100dvh;margin:0;border:0;border-top:4px solid var(--gold);border-radius:0;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px))}
+  .dialog-heading{gap:12px;margin-bottom:8px;align-items:flex-start}
+  .dialog-heading h2{font-size:24px;line-height:1.25}
+  .icon-button{min-width:44px;flex-shrink:0;padding:0}
+  .trip-date-fields{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
+  .trip-date-fields>div:last-child{grid-column:1/-1}
+  .trip-date-fields input{width:100%;padding:12px}
+  input[type=date]{appearance:none;-webkit-appearance:none;display:block;text-align:left;min-width:0;width:100%;max-width:100%}
+  input[type=date]::-webkit-date-and-time-value{text-align:left;min-height:1.25em}
+  input[type=date]::-webkit-datetime-edit{padding:0}
+  .date-help{font-size:12px}
+  .assignment-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px;gap:6px 10px;padding:12px;border:1px solid var(--line);border-radius:5px;background:#fafbfc;margin:12px 0}
+  .assignment-row>input{grid-column:1/3;grid-row:1;padding:12px}
+  .assignment-row .remove-player{grid-column:3;grid-row:1;min-width:44px;width:44px;padding:0;font-size:27px}
+  .assignment-row .checkbox-label{min-height:44px;font-size:14px;white-space:normal;gap:8px}
+  .assignment-row .checkbox-label:nth-of-type(1){grid-column:1;grid-row:2}
+  .assignment-row .checkbox-label:nth-of-type(2){grid-column:2/4;grid-row:2}
+  .checkbox-label input{width:22px;height:22px;min-height:22px;flex-shrink:0;padding:0;margin:0}
+  .add-player-row{flex-wrap:wrap}
+  .add-player-row select{width:100%;flex:1 1 180px;padding:12px}
+  .add-player-row .secondary{flex:1 0 90px}
+  .add-assignment .text-button{margin-top:8px}
+  .dialog-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;position:sticky;bottom:calc(-20px - env(safe-area-inset-bottom,0px));z-index:2;background:#fff;border-top:1px solid var(--line);padding:16px 0 calc(12px + env(safe-area-inset-bottom,0px));margin-top:24px}
+  .dialog-actions .primary,.dialog-actions .secondary,.dialog-actions .danger{min-width:0;width:100%;margin:0;padding:12px;font-size:14px;justify-content:center}
+  .trip-actions .primary{grid-column:1/-1}
+  .error{font-size:14px}
+}
+@media(max-width:520px){
+  #roster-list{grid-template-columns:minmax(0,1fr);gap:0}
+}
+@media(max-width:360px){
+  .app-header{gap:8px}
+  .app-header .wordmark{font-size:22px}
+  .nav-active{font-size:10px}
+  .logout{padding:8px;font-size:11px}
+  #trips-table tbody tr{padding:14px;gap:12px 8px}
+  #trips-table .date-cell{font-size:13px}
+}
+@media(hover:none){
+  .roster-name{cursor:default}
+  .roster-name::after{display:none!important}
+}
+@media(min-width:1201px) and (max-width:1300px){
+  #trips-table{min-width:0}
+}
+@media(max-width:760px){
+  .mobile-sections{padding-top:calc(10px + env(safe-area-inset-top,0px))}
+  #travel-title,#roster-title{scroll-margin-top:calc(80px + env(safe-area-inset-top,0px))}
+  dialog,#child-dialog{padding-top:calc(20px + env(safe-area-inset-top,0px))}
+}
+@media(pointer:coarse){
+  input,.search input,.assignment-row>input,.add-player-row select,.trip-date-fields input{font-size:16px}
+  button,.icon-button,.remove-player{min-height:44px}
+  .checkbox-label{min-height:44px;font-size:14px}
+  .checkbox-label input{width:22px;height:22px;min-height:22px;padding:0}
+}

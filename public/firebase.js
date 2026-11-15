@@ -3,14 +3,23 @@ const apiKey = 'AIzaSyDPiUeOotJpW_NImkrW_aRLEdnzIpVoAOI';
 const url = 'https://firestore.googleapis.com/v1/projects/vrisschema/databases/(default)/documents/vru16_travel/plan';
 const storageKey = 'vru16-firebase-session';
 let session = null, refreshPromise = null;
-try { session = JSON.parse(sessionStorage.getItem(storageKey) || 'null'); } catch { sessionStorage.removeItem(storageKey); }
-function store(value) { session = value; if(value) sessionStorage.setItem(storageKey,JSON.stringify(value)); else sessionStorage.removeItem(storageKey); }
+try { session = JSON.parse(sessionStorage.getItem(storageKey) || 'null'); }
+catch { try { sessionStorage.removeItem(storageKey); } catch {} }
+function store(value) {
+  session = value;
+  // Storage restrictions must not prevent a session in the current page.
+  try { if(value) sessionStorage.setItem(storageKey,JSON.stringify(value)); else sessionStorage.removeItem(storageKey); }
+  catch {}
+}
 export function logout() { store(null); }
 export function hasSession() { return !!session?.refreshToken; }
 async function request(url,options) {
   let response;
-  try { response=await fetch(url,{...options,signal:AbortSignal.timeout(15000)}); }
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),15000);
+  try { response=await fetch(url,{...options,signal:controller.signal}); }
   catch { throw new Error('Ingen kontakt med databasen. Kontrollera anslutningen och försök igen.'); }
+  finally { clearTimeout(timeout); }
   const data=await response.json();
   if(!response.ok) { const error=new Error(data.error?.message || 'Förfrågan misslyckades.');error.status=response.status;throw error; }
   return data;

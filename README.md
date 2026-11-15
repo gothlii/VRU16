@@ -38,7 +38,7 @@ npm test
 
 Samma projekt och databas som `gothlii/VRIsSchema` används: Firestore-projektet `vrisschema`, databasen `(default)`. VRU16 använder endast dokumentet `vru16_travel/plan`. Ingen reseinformation eller barnlista finns i webbplatsens publicerade filer eller i detta repos historik.
 
-Firebase Authentication kontrollerar lagkontot. Webbläsaren skickar en kortlivad ID-token till Firestore. Sessionen lagras i `sessionStorage`, återställs vid omladdning av samma flik och rensas vid utloggning. Firebase sköter tokenförnyelsen via sin REST-tjänst. Sessioner i andra flikar påverkas inte av lokal utloggning.
+Firebase Authentication kontrollerar lagkontot. Webbläsaren skickar en kortlivad ID-token till Firestore. Sessionen lagras i `sessionStorage`, återställs vid omladdning av samma flik och rensas vid utloggning. Om webbläsaren blockerar sessionslagring fungerar inloggningen i sidans minne; då krävs ny inloggning vid omladdning. Firebase sköter tokenförnyelsen via sin REST-tjänst. Sessioner i andra flikar påverkas inte av lokal utloggning.
 
 Firestore-regler kräver lagkontots UID eller befintlig schemaadministratör för läsning och skrivning av reseplanen. Utloggad direktåtkomst till dokumentet ska ge HTTP 403. Lagkontot får inte ändra schemasidans övriga samlingar. Reglerna för befintliga schemaanvändare bevaras. Regler för projektets andra appar publiceras inte av GitHub Actions.
 
@@ -48,4 +48,4 @@ Datadokumentet har `schemaVersion: 2` samt `payload`, en JSON-sträng med `child
 
 ## Design och tillgänglighet
 
-Klubbens primärfärg `#1D3160`, gult `#FFCA01` och vitt följer https://visbyroma.se/. Originalloggan har sparats lokalt från https://visbyroma.se/wp-content/uploads/2024/09/Logga-Visby-Roma-Dark-transparant-267x300.png. Mobilanpassad layout, tangentbordsfokus, tabellrubriker, formuläretiketter och statusmeddelanden ingår. Tabellen kan rullas i sidled på smala skärmar.
+Klubbens primärfärg `#1D3160`, gult `#FFCA01` och vitt följer https://visbyroma.se/. Originalloggan har sparats lokalt från https://visbyroma.se/wp-content/uploads/2024/09/Logga-Visby-Roma-Dark-transparant-267x300.png. På skärmar upp till 900 pixlar visas resorna som kort med alla uppgifter och en tydlig Ändra-knapp, utan att tabellen behöver rullas i sidled. Surfplattor får en kolumn och snabblänkar mellan resor och spelarlista. På telefon visas redigeringen som en rullningsbar helskärmsruta med större fält, knappar och kryssrutor. Inmatning använder minst 16 pixlars text på telefon och pekskärmar för att undvika Safaris automatiska formulärzoom; vanlig zoom är fortfarande möjlig. Layouten tar hänsyn till iPhones skärmutskärning och hemindikator. Tangentbordsfokus, tabellroller, formuläretiketter och statusmeddelanden ingår.

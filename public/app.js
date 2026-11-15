@@ -2,6 +2,22 @@ import {login,logout,hasSession,loadPlan,savePlan} from './firebase.js';
 import {normalizedName,validatePlan,tripCounts,filterTrips,addChild,newWeekDefaults,sortChildren} from './model.js';
 const $=id=>document.getElementById(id);
 let plan=null,version=null,draft=null,editingChild=null,addToDraft=false,busy=false,rosterSort='trips';
+let dialogScrollY=0;
+function openDialog(dialog) {
+  if(!document.querySelector('dialog[open]')) {
+    dialogScrollY=window.scrollY;
+    document.body.style.setProperty('--dialog-scroll-y',`-${dialogScrollY}px`);
+    document.body.classList.add('dialog-open');
+  }
+  dialog.showModal();
+}
+for(const id of ['trip-dialog','child-dialog']) $(id).addEventListener('close',()=>{
+  if(!document.querySelector('dialog[open]')) {
+    document.body.classList.remove('dialog-open');
+    document.body.style.removeProperty('--dialog-scroll-y');
+    window.scrollTo(0,dialogScrollY);
+  }
+});
 function element(tag,text,className) {const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;return e;}
 function showLogin(message='') {
   $('boot-status').hidden=true;$('login-view').hidden=false;$('planner-view').hidden=true;
@@ -22,12 +38,12 @@ function render() {
   const filtered=filterTrips(plan,$('search').value),names=new Map(plan.children.map(c=>[c.id,c.name]));
   $('trips-body').replaceChildren();$('trip-count').textContent=String(plan.trips.length).padStart(2,'0');
   for(const trip of filtered) {
-    const row=element('tr'),week=element('th');week.scope='row';week.append(element('span',String(trip.week),'week-badge'));
+    const row=element('tr'),week=element('th',undefined,'week-cell');row.setAttribute('role','row');week.setAttribute('role','rowheader');week.scope='row';week.dataset.label='Vecka';week.append(element('span',String(trip.week),'week-badge'));
     const leaders=element('td',trip.leaders||'Ej planerat','leaders'),children=element('td',undefined,'children');
     trip.assignments.forEach((a,i)=>{if(i)children.append(', ');const text=names.get(a.childId)+(a.goalkeeper?' (målvakt)':'')+(a.uncertain?'?':'');children.append(element(a.goalkeeper?'strong':'span',text));});
-    const count=element('td');count.append(element('span',trip.assignments.length,'count'));if(trip.note)count.append(element('small',trip.note));
-    const actions=element('td'),edit=element('button','Ändra','edit-button');edit.setAttribute('aria-label',`Ändra resa vecka ${trip.week}`);edit.addEventListener('click',()=>openTrip(trip.id));actions.append(edit);
-    const date=element('td',trip.date,'date-cell');row.append(week,date,leaders,children,count,actions);$('trips-body').append(row);
+    const count=element('td',undefined,'count-cell');count.append(element('span',trip.assignments.length,'count'));if(trip.note)count.append(element('small',trip.note));
+    const actions=element('td',undefined,'actions-cell'),edit=element('button','Ändra','edit-button');edit.setAttribute('aria-label',`Ändra resa vecka ${trip.week}`);edit.addEventListener('click',()=>openTrip(trip.id));actions.append(edit);
+    const date=element('td',trip.date,'date-cell');for(const [cell,label] of [[date,'Datum'],[leaders,'Ledare'],[children,'Barn'],[count,'Antal barn'],[actions,'']]){cell.setAttribute('role','cell');cell.dataset.label=label;}row.append(week,date,leaders,children,count,actions);$('trips-body').append(row);
   }
   $('trips-table').hidden=filtered.length===0;$('empty').hidden=filtered.length!==0;$('showing').textContent=`Visar ${filtered.length} av ${plan.trips.length} resor`;
   renderRoster();
@@ -46,7 +62,7 @@ function renderRoster() {
 $('sort-roster-trips').addEventListener('click',()=>{rosterSort='trips';if(plan)renderRoster();});
 $('sort-roster-name').addEventListener('click',()=>{rosterSort='name';if(plan)renderRoster();});
 function openTrip(id) {
-  draft=id?structuredClone(plan.trips.find(t=>t.id===id)):{id:crypto.randomUUID(),...newWeekDefaults(plan),date:'',leaders:'',note:'',assignments:[]};$('delete-week').hidden=!id;$('edit-title').textContent=id?`Ändra resa · vecka ${draft.week}`:'Lägg till vecka';$('edit-week').value=draft.week;$('edit-year').value=draft.year;$('edit-date').value=draft.date||'';$('edit-leaders').value=draft.leaders;$('edit-note').value=draft.note;$('trip-error').textContent='';renderDraft();$('trip-dialog').showModal();
+  draft=id?structuredClone(plan.trips.find(t=>t.id===id)):{id:crypto.randomUUID(),...newWeekDefaults(plan),date:'',leaders:'',note:'',assignments:[]};$('delete-week').hidden=!id;$('edit-title').textContent=id?`Ändra resa · vecka ${draft.week}`:'Lägg till vecka';$('edit-week').value=draft.week;$('edit-year').value=draft.year;$('edit-date').value=draft.date||'';$('edit-leaders').value=draft.leaders;$('edit-note').value=draft.note;$('trip-error').textContent='';renderDraft();openDialog($('trip-dialog'));
 }
 function renderDraft() {
   $('edit-assignments').replaceChildren();
@@ -70,7 +86,7 @@ async function persist(next) {
 }
 function setBusy(value){busy=value;for(const id of ['save-trip','save-child','cancel-trip','close-trip','cancel-child','close-child','delete-week']) $(id).disabled=value;}
 function openChild(id=null,fromDraft=false) {
-  editingChild=id;addToDraft=fromDraft;$('child-title').textContent=id?'Ändra barnets namn':'Lägg till barn';$('child-name').value=id?plan.children.find(c=>c.id===id).name:'';$('child-help').textContent=id?'Namnändringen gäller alla resor där barnet finns med.':'Barnet läggs till i spelarlistan och kan sedan väljas till en resa.';$('child-error').textContent='';$('child-dialog').showModal();
+  editingChild=id;addToDraft=fromDraft;$('child-title').textContent=id?'Ändra barnets namn':'Lägg till barn';$('child-name').value=id?plan.children.find(c=>c.id===id).name:'';$('child-help').textContent=id?'Namnändringen gäller alla resor där barnet finns med.':'Barnet läggs till i spelarlistan och kan sedan väljas till en resa.';$('child-error').textContent='';openDialog($('child-dialog'));
 }
 $('login-form').addEventListener('submit',async event=>{event.preventDefault();$('login-error').textContent='';$('login-button').disabled=true;try{await login($('username').value,$('password').value);$('password').value='';await showPlanner();}catch(error){$('login-error').textContent=error.message;}finally{$('login-button').disabled=false;}});
 $('toggle-password').addEventListener('click',()=>{const visible=$('password').type==='password';$('password').type=visible?'text':'password';$('toggle-password').textContent=visible?'Dölj':'Visa';$('toggle-password').setAttribute('aria-label',visible?'Dölj lösenord':'Visa lösenord');$('toggle-password').setAttribute('aria-pressed',String(visible));});

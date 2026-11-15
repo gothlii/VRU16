@@ -19,3 +19,22 @@ test('Datum kan redigeras separat och ändras inte när veckan ändras',()=>{con
 test('Två resor samma vecka och datum sparas och räknas separat',()=>{const plan=fixture();const first=plan.trips[0];const second=structuredClone(first);second.id='second-same-week';second.leaders='En annan ledare';plan.trips.push(second);const reloaded=JSON.parse(JSON.stringify(validatePlan(plan)));assert.equal(filterTrips(reloaded,'v41').length,2);assert.equal(tripCounts(reloaded).get('a'),3);reloaded.trips=reloaded.trips.filter(t=>t.id!==first.id);assert.equal(filterTrips(reloaded,'v41').length,1);assert.equal(reloaded.trips.find(t=>t.id===second.id).leaders,'En annan ledare');assert.equal(tripCounts(reloaded).get('a'),2);});
 
 test('Spelarlistan växlar mellan flest resor först och alfabetisk ordning',()=>{const plan=fixture();plan.trips[0].assignments[0].childId='c';plan.trips[1].assignments[0].childId='b';assert.deepEqual(sortChildren(plan).map(c=>c.id),['b','c','a']);assert.deepEqual(sortChildren(plan,'name').map(c=>c.id),['a','b','c']);assert.deepEqual(plan.children.map(c=>c.id),['a','b','c']);assert.deepEqual(sortChildren({...plan,trips:[]}).map(c=>c.id),['a','b','c']);});
+
+test('Inloggning fungerar utan sessionslagring eller AbortSignal.timeout',async t=>{
+  const originalFetch=globalThis.fetch,originalTimeout=AbortSignal.timeout;
+  AbortSignal.timeout=undefined;
+  globalThis.sessionStorage={getItem(){throw new Error('Storage blocked');},setItem(){throw new Error('Storage blocked');},removeItem(){throw new Error('Storage blocked');}};
+  globalThis.fetch=async(url,options)=>{
+    if(String(url).includes('signInWithPassword'))return new Response(JSON.stringify({idToken:'memory-token',refreshToken:'memory-refresh',expiresIn:'3600'}),{status:200});
+    assert.equal(options.headers.Authorization,'Bearer memory-token');
+    return new Response(JSON.stringify({fields:{payload:{stringValue:JSON.stringify(fixture())}},updateTime:'memory-version'}),{status:200});
+  };
+  t.after(()=>{globalThis.fetch=originalFetch;AbortSignal.timeout=originalTimeout;delete globalThis.sessionStorage;});
+  const api=await import('../public/firebase.js?blocked-storage');
+  assert.equal(api.hasSession(),false);
+  await api.login('team16','test-password');
+  assert.equal((await api.loadPlan()).plan.trips.length,2);
+  api.logout();
+  assert.equal(api.hasSession(),false);
+  await assert.rejects(api.loadPlan(),e=>e.status===401);
+});
